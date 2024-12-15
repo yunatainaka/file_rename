@@ -4,11 +4,12 @@ import pathlib
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+from tkinter import filedialog
+from tkinter import simpledialog
 import shutil
 
 class FileRename:
     def __init__(self):
-        self.test = ""
         self.input_folder = ""
         self.output_folder = ""
 
@@ -18,7 +19,7 @@ class FileRename:
     def _create_GUI(self):
         root = tk.Tk()
         root.title("File Rename Tool")
-        root.geometry("400x600")
+        root.geometry("400x400")
         root.resizable(False, False)
 
         tk.Message(
@@ -37,13 +38,12 @@ class FileRename:
             text="""※注意
         ・置換後文字列が空白の場合は、置換前文字列を削除する
         ・出力フォルダが未選択の場合は入力フォルダ内のファイルを上書きする
-        ・置換後のファイル名が重複する場合、該当ファイルの置換は行わない（未作成）
-            """,
+        """,
         ).place(x=0, y=100)
 
         # 入力フォルダフレーム
         frame1 = ttk.Frame(root, width=360, height=60, padding=10, relief="groove")
-        frame1.place(x=20, y=200)
+        frame1.place(x=20, y=160)
         tk.Label(frame1, text="入力フォルダを選択してください").place(x=0, y=0)
         input_path = tk.StringVar()
         IDirEntry = ttk.Entry(
@@ -58,7 +58,7 @@ class FileRename:
 
         # 置換文言フレーム
         frame2 = ttk.Frame(root, width=360, height=60, padding=10, relief="groove")
-        frame2.place(x=20, y=260)
+        frame2.place(x=20, y=220)
 
         tk.Label(frame2, text="置換する文言を入力してください").place(x=0, y=0)
         self.before = tk.StringVar()
@@ -71,7 +71,7 @@ class FileRename:
 
         # 出力フォルダフレーム
         frame3 = ttk.Frame(root, width=360, height=60, padding=10, relief="groove")
-        frame3.place(x=20, y=320)
+        frame3.place(x=20, y=280)
         tk.Label(frame3, text="出力フォルダを選択してください").place(x=0, y=0)
         output_path = tk.StringVar()
         IDirEntry = ttk.Entry(
@@ -88,7 +88,7 @@ class FileRename:
             root,
             text=("置換開始"),
             command=lambda: self._file_rename(),
-        ).place(x=200, y=400)
+        ).place(x=180, y=350)
 
         root.mainloop()
 
@@ -120,22 +120,37 @@ class FileRename:
         if len(error_list) != 0:
             self._error_dialog(error_list)
             return
-        
-          
-        print("input_folder: ", self.input_folder)
-        print("output_folder: ", self.output_folder)
 
-        print("self.before.get(), self.after.get()",self.before.get(), self.after.get())
         p_temp = pathlib.Path(self.input_folder).glob('*.txt')
+
+
+        cnt = 0
         for p in p_temp:
-            if self.output_folder == "":
-                rename = p.name.replace(self.before.get(), self.after.get())
-                os.rename(f"{self.input_folder}/{p.name}", f"{self.input_folder}/{rename}")
-            else:                
-                rename = p.name.replace(self.before.get(), self.after.get())
-                shutil.copy2(f"{self.input_folder}/{p.name}", f"{self.output_folder}/{rename}")
+            if self.before.get() not in p.name:
+                continue
 
+            rename = p.name.replace(self.before.get(), self.after.get())
+            if self.output_folder == "":      
+                if self._check_renamed_file(f"{self.input_folder}/{rename}"):
+                    cnt +=1
+                    try:
+                        os.rename(f"{self.input_folder}/{p.name}", f"{self.input_folder}/{rename}")
+                    except:
+                        os.remove(f"{self.input_folder}/{rename}")
+                        os.rename(f"{self.input_folder}/{p.name}", f"{self.input_folder}/{rename}")
+            else:
+                if self._check_renamed_file(f"{self.output_folder}/{rename}"):
+                    cnt +=1
+                    shutil.copy2(f"{self.input_folder}/{p.name}", f"{self.output_folder}/{rename}")
+        
+        messagebox.showinfo("置換ファイル数", f"{cnt}件のファイルを置換しました")
 
+    def _check_renamed_file(self, output_path):        
+        if os.path.isfile(output_path):
+            res = messagebox.askokcancel("上書き確認", f"{output_path}は存在します。\nファイルの上書きをしますか？")
+            return res
+        else:
+            return True
 if __name__ == "__main__":
     fr = FileRename()
     fr.main()
