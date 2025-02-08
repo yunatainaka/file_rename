@@ -1,5 +1,5 @@
 import os
-
+import sys
 import pathlib
 import tkinter as tk
 from tkinter import ttk
@@ -21,6 +21,11 @@ class FileRename:
         root = tk.Tk()
         root.title("File Rename Tool")
         root.resizable(False, False)
+
+        iconfile = "icon.ico"
+        if getattr(sys, "frozen", False):
+            iconfile = os.path.join(sys._MEIPASS, iconfile)
+        root.iconbitmap(default=iconfile)
 
         tk.Message(
             root,
